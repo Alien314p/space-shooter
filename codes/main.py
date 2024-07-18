@@ -2,8 +2,6 @@ import pygame
 from os.path import join as jo
 from random import randint
 
-
-
 pygame.init()
 WINDOW_WIDTH=1280
 WINDOW_HEIGHT=720
@@ -93,9 +91,6 @@ class Meteor(pygame.sprite.Sprite):
         self.image=pygame.transform.rotozoom(self.originalsurf,self.rotation,1)
         self.rect=self.image.get_frect(center=self.rect.center)
 
-
-
-
 class Laser(pygame.sprite.Sprite):
     def __init__(self, groups,surf,pos):
         super().__init__(groups)
@@ -116,8 +111,6 @@ class Laser(pygame.sprite.Sprite):
         if collision:
             self.kill()
 
-
-
 class Explosion(pygame.sprite.Sprite):
     def __init__(self, groups,frames,pos):
         super().__init__(groups)
@@ -133,23 +126,7 @@ class Explosion(pygame.sprite.Sprite):
             self.image= self.frames[int(self.frame_index) % 21]
         else:
             self.kill()
-        
 
-
-
-def collisions():
-    collision = pygame.sprite.spritecollide(player,meteor_sprites,True,pygame.sprite.collide_mask)
-    if collision:
-        damage_sound.play()
-        return False
-    
-    for laser in laser_sprites:
-        laserxmeteor=pygame.sprite.spritecollide(laser,meteor_sprites,True,pygame.sprite.collide_mask)
-        if laserxmeteor:
-            laser.kill()
-            Explosion(all_sprites,col_frames,laser.rect.midtop)
-            explosion_sound.play()
-            return 'add'
 
 def display_score(score):
     text_surf=font.render(str(score),True,(240,240,240))
@@ -157,23 +134,33 @@ def display_score(score):
     display_surface.blit(text_surf,text_rect)
     # pygame.draw.rect(display_surface,(240,240,240),text_rect.inflate(40,30),5,5)
 
+def display_lives(lives):
+    # print('in display',lives)
+    lives_surf=font.render(str(lives),True,(240,240,240))
+    lives_rect=lives_surf.get_frect(center=(50,20))
+    display_surface.blit(lives_surf,lives_rect)
 
-
-#variables
-
-
+def check_game_over():
+    if lives<=0:
+        return True
+    else:
+        return False
 
 #importing
 star_surface=pygame.image.load(jo('images','star.png')).convert_alpha()
+# meteor_surf=pygame.transform.scale_by((pygame.image.load(jo('images','meteorp.png')).convert_alpha()),(0.6,0.6))
+laser_surf=pygame.transform.scale_by((pygame.image.load(jo('images','laserp.png')).convert_alpha()),(0.15,0.15))
+
 meteor_surf=pygame.image.load(jo('images','meteor.png')).convert_alpha()
-laser_surf=pygame.image.load(jo('images','laser.png')).convert_alpha()
-font=pygame.font.Font('font/gi_incognito.ttf',40)
+# laser_surf=pygame.image.load(jo('images','laserp.png')).convert_alpha()
+
+font=pygame.font.Font('font/font2.ttf',40)
 col_frames=[pygame.image.load(jo('images','explosion',f'{i}.png')).convert_alpha() for i in range(21)]
 
-laser_sound=pygame.mixer.Sound(jo('audio','laser.wav'))
+laser_sound=pygame.mixer.Sound(jo('audio','laser2.mp3'))
 laser_sound.set_volume(0.25)
 
-explosion_sound=pygame.mixer.Sound(jo('audio','explosion.wav'))
+explosion_sound=pygame.mixer.Sound(jo('audio','explosion2.mp3'))
 explosion_sound.set_volume(0.3)
 
 damage_sound=pygame.mixer.Sound(jo('audio','damage.ogg'))
@@ -189,20 +176,21 @@ game_music.set_volume(0.1)
 all_sprites=pygame.sprite.Group()
 meteor_sprites=pygame.sprite.Group()
 laser_sprites=pygame.sprite.Group()
-
-
 for i in range(20):
     Star(all_sprites,star_surface)
-
 player=Player(all_sprites)
-
 
 
 #costum events
 meteor_event=pygame.event.custom_type()
 pygame.time.set_timer(meteor_event,2000)
 
+
+#variables
 meteor_bounce_score=0
+lives=3
+
+
 # game_music.play()
 while running:
     dt=clock.tick()/1000
@@ -220,14 +208,30 @@ while running:
 
     #update
     all_sprites.update(dt)
-    if collisions() =='add':
-        meteor_bounce_score+=20
+
+    #collision setting
+    collision = pygame.sprite.spritecollide(player,meteor_sprites,True,pygame.sprite.collide_mask)
+    if collision:
+        damage_sound.play()
+        lives-=1
+    
+    for laser in laser_sprites:
+        laserxmeteor=pygame.sprite.spritecollide(laser,meteor_sprites,True,pygame.sprite.collide_mask)
+        if laserxmeteor:
+            laser.kill()
+            Explosion(all_sprites,col_frames,laser.rect.midtop)
+            explosion_sound.play()
+            meteor_bounce_score+=20
 
     #draw 
     display_surface.fill((22, 8, 51))
-    
     all_sprites.draw(display_surface)
     display_score(score)
+    display_lives(lives)
+
+    if check_game_over():
+        print('game over')
+        break
 
 
     pygame.display.update()
@@ -235,3 +239,11 @@ while running:
 pygame.quit()
 
 
+
+
+#todo:
+# 1.pause button 
+# 2.menu
+# 3.record save
+
+#next game ✔
